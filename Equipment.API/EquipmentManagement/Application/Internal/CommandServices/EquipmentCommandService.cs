@@ -1,0 +1,106 @@
+﻿using OsitoPolar.EquipmentService.Domain.Model.Aggregates;
+using OsitoPolar.EquipmentService.Domain.Model.Commands;
+using OsitoPolar.EquipmentService.Domain.Repositories;
+using OsitoPolar.EquipmentService.Domain.Services;
+using OsitoPolar.EquipmentService.Shared.Domain.Repositories;
+
+namespace OsitoPolar.EquipmentService.Application.Internal.CommandServices;
+
+/// <summary>
+/// Concrete implementation of IEquipmentCommandService.
+/// </summary>
+public class EquipmentCommandService(
+    IEquipmentRepository equipmentRepository,
+    IUnitOfWork unitOfWork) : IEquipmentCommandService
+{
+    public async Task<Equipment?> Handle(CreateEquipmentCommand command)
+    {
+        if (string.IsNullOrWhiteSpace(command.Name))
+            throw new ArgumentException("Equipment name is required.");
+        if (string.IsNullOrWhiteSpace(command.SerialNumber))
+            throw new ArgumentException("Serial number is required.");
+        if (string.IsNullOrWhiteSpace(command.Code))
+            throw new ArgumentException("Equipment code is required.");
+
+        if (await equipmentRepository.ExistsBySerialNumberAsync(command.SerialNumber))
+            throw new InvalidOperationException($"Equipment with serial number {command.SerialNumber} already exists.");
+        if (await equipmentRepository.ExistsByCodeAsync(command.Code))
+            throw new InvalidOperationException($"Equipment with code {command.Code} already exists.");
+
+        var equipment = new Equipment(command);
+        await equipmentRepository.AddAsync(equipment);
+        await unitOfWork.CompleteAsync();
+
+        return equipment;
+    }
+
+    public async Task<Equipment?> Handle(UpdateEquipmentTemperatureCommand command)
+    {
+        var equipment = await equipmentRepository.FindByIdAsync(command.EquipmentId);
+        if (equipment is null) return null;
+
+        equipment.Handle(command);
+        await unitOfWork.CompleteAsync();
+        
+        return equipment;
+    }
+
+    public async Task<Equipment?> Handle(UpdateEquipmentPowerStateCommand command)
+    {
+        var equipment = await equipmentRepository.FindByIdAsync(command.EquipmentId);
+        if (equipment is null) return null;
+
+        equipment.Handle(command);
+        await unitOfWork.CompleteAsync();
+        
+        return equipment;
+    }
+
+    public async Task<Equipment?> Handle(UpdateEquipmentLocationCommand command)
+    {
+        var equipment = await equipmentRepository.FindByIdAsync(command.EquipmentId);
+        if (equipment is null) return null;
+
+        equipment.Handle(command);
+        await unitOfWork.CompleteAsync();
+        
+        return equipment;
+    }
+    public async Task<bool> Handle(DeleteEquipmentCommand command)
+    {
+        var equipment = await equipmentRepository.FindByIdAsync(command.EquipmentId);
+        if (equipment is null) return false;
+
+        equipmentRepository.Remove(equipment);
+        await unitOfWork.CompleteAsync();
+        return true;
+    }
+
+    // ========== RENTAL EQUIPMENT COMMAND HANDLERS ==========
+
+    public async Task<Equipment?> Handle(PublishEquipmentForRentCommand command)
+    {
+        var equipment = await equipmentRepository.FindByIdAsync(command.EquipmentId);
+        if (equipment is null)
+            return null;
+
+        equipment.PublishForRent(command.StartDate, command.EndDate, command.MonthlyFee, command.ProviderId);
+        equipmentRepository.Update(equipment);
+        await unitOfWork.CompleteAsync();
+
+        return equipment;
+    }
+
+    public async Task<Equipment?> Handle(UnpublishEquipmentFromRentCommand command)
+    {
+        var equipment = await equipmentRepository.FindByIdAsync(command.EquipmentId);
+        if (equipment is null)
+            return null;
+
+        equipment.UnpublishFromRent();
+        equipmentRepository.Update(equipment);
+        await unitOfWork.CompleteAsync();
+
+        return equipment;
+    }
+}

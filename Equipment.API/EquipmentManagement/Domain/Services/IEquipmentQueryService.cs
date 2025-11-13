@@ -1,0 +1,20 @@
+﻿using OsitoPolar.EquipmentService.Domain.Model.Aggregates;
+using OsitoPolar.EquipmentService.Domain.Model.Queries;
+
+namespace OsitoPolar.EquipmentService.Domain.Services;
+
+/// <summary>
+/// Defines the contract for query-based operations on Equipment.
+/// </summary>
+public interface IEquipmentQueryService
+{
+    Task<Equipment?> Handle(GetEquipmentByIdQuery query);
+    Task<IEnumerable<Equipment>> Handle(GetAllEquipmentsQuery query);
+    Task<IEnumerable<Equipment>> Handle(GetEquipmentsByOwnerIdQuery query);
+    Task<IEnumerable<Equipment>> Handle(GetEquipmentsByTypeQuery query);
+    Task<IEnumerable<Equipment>> Handle(GetEquipmentsByStatusQuery query);
+
+    // Rental Equipment queries
+    Task<IEnumerable<Equipment>> Handle(GetAvailableRentalEquipmentQuery query);
+    Task<Equipment?> Handle(GetRentalEquipmentByIdQuery query);
+}
