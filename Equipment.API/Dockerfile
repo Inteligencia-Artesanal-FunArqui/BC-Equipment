@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
@@ -7,10 +7,12 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Equipment.API/Equipment.API.csproj", "Equipment.API/"]
-RUN dotnet restore "Equipment.API/Equipment.API.csproj"
-COPY . .
-WORKDIR "/src/Equipment.API"
+COPY ["OsitoPolar.Shared.Events/OsitoPolar.Shared.Events.csproj", "OsitoPolar.Shared.Events/"]
+COPY ["OsitoPolar.Equipment.Service/Equipment.API/Equipment.API/Equipment.API.csproj", "OsitoPolar.Equipment.Service/Equipment.API/Equipment.API/"]
+RUN dotnet restore "OsitoPolar.Equipment.Service/Equipment.API/Equipment.API/Equipment.API.csproj"
+COPY OsitoPolar.Shared.Events/ OsitoPolar.Shared.Events/
+COPY OsitoPolar.Equipment.Service/Equipment.API/Equipment.API/ OsitoPolar.Equipment.Service/Equipment.API/Equipment.API/
+WORKDIR "/src/OsitoPolar.Equipment.Service/Equipment.API/Equipment.API"
 RUN dotnet build "Equipment.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish

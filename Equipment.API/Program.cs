@@ -9,6 +9,7 @@ using OsitoPolar.EquipmentService.Infrastructure.Persistence.EFC.Repositories;
 using OsitoPolar.EquipmentService.Shared.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using OsitoPolar.EquipmentService.Shared.Infrastructure.Interfaces.ASP.Configuration;
 using OsitoPolar.EquipmentService.Shared.Infrastructure.Interfaces.ASP.Configuration.Extensions;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,6 +75,35 @@ builder.Services.AddHttpClient<OsitoPolar.EquipmentService.Shared.Interfaces.ACL
     client.Timeout = TimeSpan.FromSeconds(30);
     client.DefaultRequestHeaders.Add("User-Agent", "Equipment-Service/1.0");
 });
+
+// ===========================
+// MassTransit + RabbitMQ Configuration
+// ===========================
+builder.Services.AddMassTransit(x =>
+{
+    // Configure RabbitMQ
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var rabbitMqHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        var rabbitMqPort = builder.Configuration["RabbitMQ:Port"] ?? "5672";
+        var rabbitMqUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
+        var rabbitMqPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+
+        cfg.Host($"rabbitmq://{rabbitMqHost}:{rabbitMqPort}", h =>
+        {
+            h.Username(rabbitMqUser);
+            h.Password(rabbitMqPass);
+        });
+
+        // Configure message retry policy
+        cfg.UseMessageRetry(r => r.Incremental(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2)));
+
+        // Auto-configure all consumers
+        cfg.ConfigureEndpoints(context);
+    });
+});
+
+Console.WriteLine("✅ MassTransit + RabbitMQ configured for Equipment Service");
 
 // Controllers
 builder.Services.AddControllers(options =>
