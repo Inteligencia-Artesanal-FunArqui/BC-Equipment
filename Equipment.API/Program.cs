@@ -48,11 +48,32 @@ builder.Services.AddScoped<OsitoPolar.EquipmentService.Shared.Domain.Repositorie
 builder.Services.AddScoped<IEquipmentCommandService, EquipmentCommandService>();
 builder.Services.AddScoped<IEquipmentQueryService, EquipmentQueryService>();
 
-// ⚠️ IMPORTANTE: Facades para comunicación con otros microservicios
-// Estos facades ahora harán llamadas HTTP a otros servicios
-// Por ahora están comentados - se implementarán después cuando se configure HTTP communication
+// ✅ FASE 2: HTTP Facades for Microservices Communication
 
-// builder.Services.AddScoped<IProfilesContextFacade, ProfilesHttpFacade>();
+// 1. EquipmentContextFacade - For OTHER services to call Equipment Service
+builder.Services.AddScoped<OsitoPolar.EquipmentService.Interfaces.ACL.IEquipmentContextFacade, OsitoPolar.EquipmentService.Application.ACL.EquipmentContextFacade>();
+
+// 2. ProfilesHttpFacade - For Equipment Service to call Profiles Service
+builder.Services.AddHttpClient<OsitoPolar.EquipmentService.Shared.Interfaces.ACL.IProfilesContextFacade, OsitoPolar.EquipmentService.Application.ACL.Services.ProfilesHttpFacade>(client =>
+{
+    var profilesUrl = builder.Configuration["ServiceUrls:ProfilesService"]
+        ?? throw new InvalidOperationException("ProfilesService URL not configured");
+
+    client.BaseAddress = new Uri(profilesUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Add("User-Agent", "Equipment-Service/1.0");
+});
+
+// 3. NotificationsHttpFacade - For Equipment Service to call Notifications Service
+builder.Services.AddHttpClient<OsitoPolar.EquipmentService.Shared.Interfaces.ACL.INotificationContextFacade, OsitoPolar.EquipmentService.Application.ACL.Services.NotificationsHttpFacade>(client =>
+{
+    var notificationsUrl = builder.Configuration["ServiceUrls:NotificationsService"]
+        ?? throw new InvalidOperationException("NotificationsService URL not configured");
+
+    client.BaseAddress = new Uri(notificationsUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Add("User-Agent", "Equipment-Service/1.0");
+});
 
 // Controllers
 builder.Services.AddControllers(options =>
