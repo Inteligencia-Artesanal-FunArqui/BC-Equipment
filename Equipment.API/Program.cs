@@ -9,6 +9,9 @@ using OsitoPolar.EquipmentService.Infrastructure.Persistence.EFC.Repositories;
 using OsitoPolar.EquipmentService.Shared.Infrastructure.Persistence.EFC.Configuration.Extensions;
 using OsitoPolar.EquipmentService.Shared.Infrastructure.Interfaces.ASP.Configuration;
 using OsitoPolar.EquipmentService.Shared.Infrastructure.Interfaces.ASP.Configuration.Extensions;
+using OsitoPolar.EquipmentService.Shared.Infrastructure.Tokens.JWT.Configuration;
+using OsitoPolar.EquipmentService.Shared.Infrastructure.Tokens.JWT.Services;
+using OsitoPolar.EquipmentService.Shared.Infrastructure.Pipeline.Middleware.Extensions;
 using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,6 +51,10 @@ builder.Services.AddScoped<OsitoPolar.EquipmentService.Shared.Domain.Repositorie
 // Dependency Injection - Services
 builder.Services.AddScoped<IEquipmentCommandService, EquipmentCommandService>();
 builder.Services.AddScoped<IEquipmentQueryService, EquipmentQueryService>();
+
+// JWT Token Configuration - Must use same secret as IAM Service
+builder.Services.Configure<TokenSettings>(builder.Configuration.GetSection("TokenSettings"));
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 // ✅ FASE 2: HTTP Facades for Microservices Communication
 
@@ -133,8 +140,8 @@ using (var scope = app.Services.CreateScope())
     var context = services.GetRequiredService<EquipmentDbContext>();
     try
     {
-        context.Database.CanConnect();
-        Console.WriteLine("✅ Database connection successful");
+        context.Database.EnsureCreated();
+        Console.WriteLine("✅ Database connection successful and schema ensured");
     }
     catch (Exception ex)
     {
@@ -150,6 +157,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAllPolicy");
+
+// JWT Authorization Middleware - validates tokens and sets HttpContext.Items["User"]
+app.UseRequestAuthorization();
 
 app.UseAuthorization();
 
