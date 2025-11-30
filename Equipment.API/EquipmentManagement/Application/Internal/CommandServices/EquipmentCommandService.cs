@@ -31,6 +31,16 @@ public class EquipmentCommandService(
         await equipmentRepository.AddAsync(equipment);
         await unitOfWork.CompleteAsync();
 
+        // Auto-publish for rent if created by a Provider (available immediately, no date restrictions)
+        if (command.OwnerType == "Provider")
+        {
+            // Default monthly fee based on equipment cost (10% of cost, min $100)
+            var defaultMonthlyFee = Math.Max(100m, command.Cost * 0.10m);
+            equipment.PublishForRent(defaultMonthlyFee, command.OwnerId);
+            equipmentRepository.Update(equipment);
+            await unitOfWork.CompleteAsync();
+        }
+
         return equipment;
     }
 

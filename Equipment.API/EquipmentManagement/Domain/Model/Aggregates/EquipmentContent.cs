@@ -96,7 +96,25 @@ public partial class Equipment
     // ========== RENTAL EQUIPMENT METHODS ==========
 
     /// <summary>
-    /// Provider publishes equipment for rent in the marketplace
+    /// Provider publishes equipment for rent in the marketplace (without specific dates - available immediately)
+    /// </summary>
+    public void PublishForRent(decimal monthlyFee, int providerId)
+    {
+        if (OwnerType != "Provider")
+            throw new InvalidOperationException("Only providers can publish equipment for rent");
+
+        if (RentalInfo != null && RentalInfo.IsActive())
+            throw new InvalidOperationException("Equipment is currently rented and cannot be published");
+
+        if (monthlyFee <= 0)
+            throw new ArgumentException("Monthly fee must be positive");
+
+        // Use constructor without dates - equipment is available for rent immediately
+        RentalInfo = new Entities.RentalInfo(monthlyFee, providerId);
+    }
+
+    /// <summary>
+    /// Provider publishes equipment for rent in the marketplace with specific availability period
     /// </summary>
     public void PublishForRent(DateTimeOffset startDate, DateTimeOffset endDate, decimal monthlyFee, int providerId)
     {
