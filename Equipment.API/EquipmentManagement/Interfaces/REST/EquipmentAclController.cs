@@ -127,7 +127,7 @@ public class EquipmentAclController : ControllerBase
     /// </summary>
     /// <param name="equipmentId">Equipment ID</param>
     /// <returns>Boolean indicating if equipment exists</returns>
-    [HttpGet("../exists/{equipmentId:int}")]
+    [HttpGet("/api/v1/equipment/exists/{equipmentId:int}")]
     [SwaggerOperation(
         Summary = "Check if equipment exists",
         Description = "Returns true if equipment exists, false otherwise (called by Analytics Service)")]
@@ -153,7 +153,7 @@ public class EquipmentAclController : ControllerBase
     /// <param name="equipmentId">Equipment ID</param>
     /// <param name="ownerId">Owner ID</param>
     /// <returns>Boolean indicating if equipment is owned by the owner</returns>
-    [HttpGet("../is-owned-by/{equipmentId:int}/{ownerId:int}")]
+    [HttpGet("/api/v1/equipment/is-owned-by/{equipmentId:int}/{ownerId:int}")]
     [SwaggerOperation(
         Summary = "Check equipment ownership",
         Description = "Returns true if equipment is owned by the specified owner (called by Analytics Service)")]
